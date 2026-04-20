@@ -992,7 +992,16 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
     opacity: 0.5;
     stroke-width: 1.2;
     fill: none;
-  }body.view-rsvp .avatar-upload.has-image svg { display: none; }body.view-rsvp .avatar-caption {
+  }body.view-rsvp .avatar-upload.has-image svg { display: none; }body.view-rsvp .avatar-initials {
+    font-family: 'Cinzel', serif;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    text-transform: uppercase;
+    display: none;
+    user-select: none;
+  }body.view-rsvp .avatar-upload.has-initials svg { display: none; }body.view-rsvp .avatar-upload.has-initials .avatar-initials { display: block; }body.view-rsvp .avatar-upload.has-image .avatar-initials { display: none; }body.view-rsvp .avatar-caption {
     text-align: center;
     font-family: 'Cormorant Garamond', serif;
     font-style: italic;
@@ -4644,10 +4653,10 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
 
       <div class="avatar-upload" id="avatar-upload" onclick="document.getElementById('avatar-file').click();">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+        <span class="avatar-initials" id="avatar-initials"></span>
       </div>
       <input type="file" id="avatar-file" style="display:none;" accept="image/*" onchange="handleAvatar(this)" />
-      <p class="avatar-caption">Upload a portrait<span class="required-mark">&diams;</span></p>
-      <div class="field-error" id="avatar-error" style="text-align:center; margin-top:-20px; margin-bottom: 20px;">A portrait is required for your guest profile.</div>
+      <p class="avatar-caption">Upload a portrait<span class="optional-mark">optional</span></p>
 
       <div class="input-group">
         <label class="label">Your name<span class="required-mark">&diams;</span></label>
@@ -5975,20 +5984,28 @@ try {
     if (valid) goToScreen(5);
   }
 
+  function computeInitials(name) {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  function updateAvatarInitials() {
+    const avatar = document.getElementById('avatar-upload');
+    const initialsEl = document.getElementById('avatar-initials');
+    const nameEl = document.getElementById('profile-name');
+    if (!avatar || !initialsEl || !nameEl) return;
+    if (avatar.classList.contains('has-image')) return; // photo takes precedence
+    const initials = computeInitials(nameEl.value);
+    initialsEl.textContent = initials;
+    avatar.classList.toggle('has-initials', initials.length > 0);
+  }
+
   function validateAndContinueProfile() {
     let valid = true;
-
-    // Avatar check
-    const avatar = document.getElementById('avatar-upload');
-    const avatarErr = document.getElementById('avatar-error');
-    if (!avatar.classList.contains('has-image')) {
-      avatar.style.borderColor = 'var(--danger)';
-      avatarErr.classList.add('show');
-      valid = false;
-    } else {
-      avatar.style.borderColor = '';
-      avatarErr.classList.remove('show');
-    }
 
     // Name check
     const name = document.getElementById('profile-name');
@@ -6104,8 +6121,7 @@ try {
       upload.style.backgroundPosition = 'center';
       upload.style.borderColor = '';
       upload.classList.add('has-image');
-      const err = document.getElementById('avatar-error');
-      if (err) err.classList.remove('show');
+      upload.classList.remove('has-initials');
     };
     reader.readAsDataURL(file);
   }
@@ -6145,6 +6161,12 @@ try {
       }
     });
   });
+
+  // Live-update avatar initials as the user types their name
+  const profileNameEl = document.getElementById('profile-name');
+  if (profileNameEl) {
+    profileNameEl.addEventListener('input', updateAvatarInitials);
+  }
 
   // Expose handlers for inline onclick attributes
   Object.assign(window, {
