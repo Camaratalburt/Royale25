@@ -4856,7 +4856,7 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
     </div>
   </nav>
 
-  <div class="mobile-nav-drawer" id="mobile-nav">
+  <div class="mobile-nav-drawer" id="mobile-nav-dashboard">
     <button class="nav-item active">Dashboard</button>
     <button class="nav-item" onclick="navigateTo('guests')">Guests</button>
     <button class="nav-item" onclick="navigateTo('chat')">Matches</button>
@@ -5160,7 +5160,7 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
   </div>
 </nav>
 
-<div class="mobile-nav-drawer" id="mobile-nav">
+<div class="mobile-nav-drawer" id="mobile-nav-guests">
   <button class="nav-item" onclick="navigateTo('dashboard')">Dashboard</button>
   <button class="nav-item active">Guests</button>
   <button class="nav-item" onclick="navigateTo('chat')">Matches</button>
@@ -5410,7 +5410,7 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
   </div>
 </nav>
 
-<div class="mobile-nav-drawer" id="mobile-nav">
+<div class="mobile-nav-drawer" id="mobile-nav-playlist">
   <button class="nav-item" onclick="navigateTo('dashboard')">Dashboard</button>
   <button class="nav-item" onclick="navigateTo('guests')">Guests</button>
   <button class="nav-item" onclick="navigateTo('chat')">Matches</button>
@@ -5550,7 +5550,7 @@ body.view-chat, body.view-chat html { overflow: hidden; height: 100vh; }
   </div>
 </nav>
 
-<div class="mobile-nav-drawer" id="mobile-nav">
+<div class="mobile-nav-drawer" id="mobile-nav-album">
   <button class="nav-item" onclick="navigateTo('dashboard')">Dashboard</button>
   <button class="nav-item" onclick="navigateTo('guests')">Guests</button>
   <button class="nav-item" onclick="navigateTo('chat')">Matches</button>
@@ -5767,11 +5767,10 @@ try {
     particlesContainer.appendChild(particle);
   }
 
-  // CTA click placeholder
+  // CTA → RSVP flow
   document.getElementById('rsvp-btn').addEventListener('click', function(e) {
     e.preventDefault();
-    // This will route to the RSVP flow once built
-    console.log('Navigate to RSVP flow');
+    navigateTo('rsvp');
   });
 
 } catch(e) { console.error('landing:', e); }
@@ -6147,6 +6146,14 @@ try {
     });
   });
 
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, {
+    selectAuth, sendCode, verifyCode, resendCode, goToScreen,
+    selectRsvp, continueFromRsvp, togglePlusOne, toggleExtraRequest,
+    validateAndContinuePlusOne, validateAndContinueProfile,
+    enterPlatform, selectRsvpReset
+  });
+
 } catch(e) { console.error('rsvp:', e); }
 };
 
@@ -6249,19 +6256,23 @@ try {
 
   // ========== Mobile nav ==========
   function toggleMobileNav() {
-    document.getElementById('mobile-nav').classList.toggle('open');
+    document.getElementById('mobile-nav-dashboard').classList.toggle('open');
   }
 
   document.addEventListener('click', (e) => {
-    const drawer = document.getElementById('mobile-nav');
-    const toggle = document.querySelector('.mobile-nav-toggle');
-    const profile = document.querySelector('.nav-profile');
-    if (drawer && !drawer.contains(e.target) && !toggle.contains(e.target) && !profile.contains(e.target)) {
+    if (!document.body.classList.contains('view-dashboard')) return;
+    const drawer = document.getElementById('mobile-nav-dashboard');
+    const toggle = document.querySelector('.view-dashboard-root .mobile-nav-toggle');
+    const profile = document.querySelector('.view-dashboard-root .nav-profile');
+    if (drawer && !drawer.contains(e.target) && (!toggle || !toggle.contains(e.target)) && (!profile || !profile.contains(e.target))) {
       drawer.classList.remove('open');
     }
   });
 
   } // end else (access granted)
+
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, { grantTestAccess, toggleMobileNav });
 
 } catch(e) { console.error('dashboard:', e); }
 };
@@ -6673,14 +6684,15 @@ try {
 
   // ===== MOBILE NAV =====
   function toggleMobileNav() {
-    document.getElementById('mobile-nav').classList.toggle('open');
+    document.getElementById('mobile-nav-guests').classList.toggle('open');
   }
 
   document.addEventListener('click', (e) => {
-    const drawer = document.getElementById('mobile-nav');
-    const toggle = document.querySelector('.mobile-nav-toggle');
-    const profile = document.querySelector('.nav-profile');
-    if (drawer && !drawer.contains(e.target) && !toggle.contains(e.target) && !profile.contains(e.target)) {
+    if (!document.body.classList.contains('view-guests')) return;
+    const drawer = document.getElementById('mobile-nav-guests');
+    const toggle = document.querySelector('.view-guests-root .mobile-nav-toggle');
+    const profile = document.querySelector('.view-guests-root .nav-profile');
+    if (drawer && !drawer.contains(e.target) && (!toggle || !toggle.contains(e.target)) && (!profile || !profile.contains(e.target))) {
       drawer.classList.remove('open');
     }
   });
@@ -6690,6 +6702,12 @@ try {
   renderGuests();
 
   } // end if (access granted)
+
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, {
+    grantTestAccess, toggleMobileNav, filterBy,
+    closeModalIfBackdrop, closeProfileModal, openMatchChat, sendReaction
+  });
 
 } catch(e) { console.error('guests:', e); }
 };
@@ -6949,6 +6967,9 @@ try {
   if (requested && matches.includes(requested)) {
     openChat(requested);
   }
+
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, { openChat, closeChatMobile, sendMessage });
 
 } catch(e) { console.error('chat:', e); }
 };
@@ -7304,13 +7325,14 @@ try {
   // MOBILE NAV
   // ========================================
   function toggleMobileNav() {
-    document.getElementById('mobile-nav').classList.toggle('open');
+    document.getElementById('mobile-nav-playlist').classList.toggle('open');
   }
   document.addEventListener('click', (e) => {
-    const drawer = document.getElementById('mobile-nav');
-    const toggle = document.querySelector('.mobile-nav-toggle');
-    const profile = document.querySelector('.nav-profile');
-    if (drawer && !drawer.contains(e.target) && !toggle.contains(e.target) && !profile.contains(e.target)) {
+    if (!document.body.classList.contains('view-playlist')) return;
+    const drawer = document.getElementById('mobile-nav-playlist');
+    const toggle = document.querySelector('.view-playlist-root .mobile-nav-toggle');
+    const profile = document.querySelector('.view-playlist-root .nav-profile');
+    if (drawer && !drawer.contains(e.target) && (!toggle || !toggle.contains(e.target)) && (!profile || !profile.contains(e.target))) {
       drawer.classList.remove('open');
     }
   });
@@ -7322,6 +7344,12 @@ try {
   renderTracks();
 
   } // end access granted
+
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, {
+    grantTestAccess, toggleMobileNav, switchTab,
+    stopPreview, playPreview, submitTrack
+  });
 
 } catch(e) { console.error('playlist:', e); }
 };
@@ -7633,13 +7661,14 @@ try {
   // MOBILE NAV
   // ==========================================
   function toggleMobileNav() {
-    document.getElementById('mobile-nav').classList.toggle('open');
+    document.getElementById('mobile-nav-album').classList.toggle('open');
   }
   document.addEventListener('click', (e) => {
-    const drawer = document.getElementById('mobile-nav');
-    const toggle = document.querySelector('.mobile-nav-toggle');
-    const profile = document.querySelector('.nav-profile');
-    if (drawer && !drawer.contains(e.target) && !toggle.contains(e.target) && !profile.contains(e.target)) {
+    if (!document.body.classList.contains('view-album')) return;
+    const drawer = document.getElementById('mobile-nav-album');
+    const toggle = document.querySelector('.view-album-root .mobile-nav-toggle');
+    const profile = document.querySelector('.view-album-root .nav-profile');
+    if (drawer && !drawer.contains(e.target) && (!toggle || !toggle.contains(e.target)) && (!profile || !profile.contains(e.target))) {
       drawer.classList.remove('open');
     }
   });
@@ -7651,6 +7680,13 @@ try {
   renderPhotos();
 
   } // end access granted
+
+  // Expose handlers for inline onclick attributes
+  Object.assign(window, {
+    grantTestAccess, toggleMobileNav, switchTab,
+    openUploadModal, closeIfBackdrop, closeUploadModal, submitUpload,
+    closeLightbox, navLightbox, openLightbox
+  });
 
 } catch(e) { console.error('album:', e); }
 };
